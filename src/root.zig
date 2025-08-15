@@ -2,7 +2,6 @@ const std = @import("std");
 const spv = @import("spirv.zig");
 const mem = std.mem;
 
-// TODO: Some functions also return mem.ALlocator.Error
 pub const Error = error{
     NotReady,
     ParseFailed,
@@ -548,15 +547,14 @@ pub const ShaderModule = extern struct {
         type_descriptions: [*]const TypeDescription,
     };
 
-    pub fn init(code: []const u32, flags: ModuleFlags) Error!ShaderModule {
+    pub fn init(code: []align(4) const u8, flags: ModuleFlags) Error!ShaderModule {
         var self: ShaderModule = undefined;
-        const size = code.len * @sizeOf(u32);
-        try checkErr(c.spvReflectCreateShaderModule2(flags, size, code.ptr, &self));
+        try checkErr(c.spvReflectCreateShaderModule2(flags, code.len, code.ptr, &self));
         return self;
     }
 
     pub fn deinit(self: *ShaderModule) void {
-        c.spvReflectDestroyShaderModule(self.module);
+        c.spvReflectDestroyShaderModule(self);
         self.* = undefined;
     }
 
@@ -578,10 +576,12 @@ pub const ShaderModule = extern struct {
         return c.spvReflectGetEntryPoint(&self, entry_point);
     }
 
+    pub const EnumerateError = Error || mem.Allocator.Error;
+
     pub fn enumerateDescriptorBindings(
         self: ShaderModule,
         allocator: mem.Allocator,
-    ) Error![]const *DescriptorBinding {
+    ) EnumerateError![]const *DescriptorBinding {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateDescriptorBindings(&self, &count, null));
         const bindings = try allocator.alloc(*DescriptorBinding, count);
@@ -596,7 +596,7 @@ pub const ShaderModule = extern struct {
         self: ShaderModule,
         entry_point: [*:0]const u8,
         allocator: mem.Allocator,
-    ) Error![]const *DescriptorBinding {
+    ) EnumerateError![]const *DescriptorBinding {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateEntryPointDescriptorBindings(&self, entry_point, &count, null));
         const bindings = try allocator.alloc(*DescriptorBinding, count);
@@ -608,7 +608,7 @@ pub const ShaderModule = extern struct {
     pub fn enumerateDescriptorSets(
         self: ShaderModule,
         allocator: mem.Allocator,
-    ) Error![]const *DescriptorSet {
+    ) EnumerateError![]const *DescriptorSet {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateDescriptorSets(&self, &count, null));
         const sets = try allocator.alloc(*DescriptorSet, count);
@@ -623,7 +623,7 @@ pub const ShaderModule = extern struct {
         self: ShaderModule,
         entry_point: [*:0]const u8,
         allocator: mem.Allocator,
-    ) Error![]const *DescriptorSet {
+    ) EnumerateError![]const *DescriptorSet {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateEntryPointDescriptorSets(&self, entry_point, &count, null));
         const sets = try allocator.alloc(*DescriptorSet, count);
@@ -637,7 +637,7 @@ pub const ShaderModule = extern struct {
     pub fn enumerateInterfaceVariables(
         self: ShaderModule,
         allocator: mem.Allocator,
-    ) Error![]const *InterfaceVariable {
+    ) EnumerateError![]const *InterfaceVariable {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateInterfaceVariables(&self, &count, null));
         const variables = try allocator.alloc(*InterfaceVariable, count);
@@ -651,7 +651,7 @@ pub const ShaderModule = extern struct {
         self: ShaderModule,
         entry_point: [*:0]const u8,
         allocator: mem.Allocator,
-    ) Error![]const *InterfaceVariable {
+    ) EnumerateError![]const *InterfaceVariable {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateEntryPointInterfaceVariables(&self, entry_point, &count, null));
         const variables = try allocator.alloc(*InterfaceVariable, count);
@@ -664,7 +664,7 @@ pub const ShaderModule = extern struct {
     pub fn enumerateInputVariables(
         self: ShaderModule,
         allocator: mem.Allocator,
-    ) Error![]const *InterfaceVariable {
+    ) EnumerateError![]const *InterfaceVariable {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateInputVariables(&self, &count, null));
         const variables = try allocator.alloc(*InterfaceVariable, count);
@@ -678,7 +678,7 @@ pub const ShaderModule = extern struct {
         self: ShaderModule,
         entry_point: [*:0]const u8,
         allocator: mem.Allocator,
-    ) Error![]const *InterfaceVariable {
+    ) EnumerateError![]const *InterfaceVariable {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateEntryPointInputVariables(&self, entry_point, &count, null));
         const variables = try allocator.alloc(*InterfaceVariable, count);
@@ -692,7 +692,7 @@ pub const ShaderModule = extern struct {
     pub fn enumerateOutputVariables(
         self: ShaderModule,
         allocator: mem.Allocator,
-    ) Error![]const *InterfaceVariable {
+    ) EnumerateError![]const *InterfaceVariable {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateOutputVariables(&self, &count, null));
         const variables = try allocator.alloc(*InterfaceVariable, count);
@@ -706,7 +706,7 @@ pub const ShaderModule = extern struct {
         self: ShaderModule,
         entry_point: [*:0]const u8,
         allocator: mem.Allocator,
-    ) Error![]const *InterfaceVariable {
+    ) EnumerateError![]const *InterfaceVariable {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateEntryPointOutputVariables(&self, entry_point, &count, null));
         const variables = try allocator.alloc(*InterfaceVariable, count);
@@ -720,7 +720,7 @@ pub const ShaderModule = extern struct {
     pub fn enumeratePushConstantBlocks(
         self: ShaderModule,
         allocator: mem.Allocator,
-    ) Error![]const *BlockVariable {
+    ) EnumerateError![]const *BlockVariable {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumeratePushConstantBlocks(&self, &count, null));
         const blocks = try allocator.alloc(*BlockVariable, count);
@@ -735,7 +735,7 @@ pub const ShaderModule = extern struct {
         self: ShaderModule,
         entry_point: [*:0]const u8,
         allocator: mem.Allocator,
-    ) Error![]const *BlockVariable {
+    ) EnumerateError![]const *BlockVariable {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateEntryPointPushConstantBlocks(&self, entry_point, &count, null));
         const blocks = try allocator.alloc(*BlockVariable, count);
@@ -747,7 +747,7 @@ pub const ShaderModule = extern struct {
     pub fn enumerateSpecializationConstants(
         self: ShaderModule,
         allocator: mem.Allocator,
-    ) Error![]const *SpecializationConstant {
+    ) EnumerateError![]const *SpecializationConstant {
         var count: u32 = undefined;
         try checkErr(c.spvReflectEnumerateSpecializationConstants(&self, &count, null));
         const constants = try allocator.alloc(*SpecializationConstant, count);
@@ -1089,7 +1089,7 @@ pub const c = struct {
     /// @return           RESULT_SUCCESS on success.
     extern fn spvReflectCreateShaderModule(
         size: usize,
-        p_code: *const u32,
+        p_code: [*]align(4) const u8,
         p_module: *ShaderModule,
     ) Result;
 
@@ -1101,7 +1101,7 @@ pub const c = struct {
     extern fn spvReflectCreateShaderModule2(
         flags: ModuleFlags,
         size: usize,
-        p_code: *const u32,
+        p_code: [*]align(4) const u8,
         p_module: *ShaderModule,
     ) Result;
 
