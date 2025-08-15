@@ -28,7 +28,7 @@ const desc_bindings = try module.enumerateDescriptorBindings(scratch);
 defer scratch.free(desc_bindings);
 ```
 
-It also exposes the plain C API with modified pointer types.
+It also exposes the plain C API with appropriate pointer types.
 
 ## SPIRV-Reflect version & upgrade process
 
