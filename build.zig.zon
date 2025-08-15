@@ -1,0 +1,19 @@
+.{
+    .name = .spirv_reflect_zig,
+    .version = "0.0.0",
+    .fingerprint = 0x85f4731154a6ec0a, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.14.1",
+    .dependencies = .{
+        .@"SPIRV-Reflect" = .{
+            .url = "https://github.com/KhronosGroup/SPIRV-Reflect/archive/refs/tags/vulkan-sdk-1.4.321.0.tar.gz",
+            .hash = "N-V-__8AAAiELABIvQoo0ZSni1HMyjgWVRa0weqkNhnuTW5e",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "LICENSE",
+        "README.md",
+    },
+}
